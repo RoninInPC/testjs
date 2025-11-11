@@ -1,85 +1,152 @@
-const tgApp = window.Telegram.WebApp;
-
-// Expand the WebApp to full height
-tgApp.expand();
-
-// Set the main button color to match the theme
-tgApp.MainButton.setParams({
-    text: 'Отправить данные',
-    color: tgApp.themeParams.button_color,
-    text_color: tgApp.themeParams.button_text_color,
-});
-
-// Get the form element
-const form = document.getElementById('application-form');
-const submitButton = document.getElementById('submit-button');
-
-// Function to collect form data
-function collectFormData() {
-    const formData = new FormData(form);
-    const data = {};
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Форма заявки</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color, #f5f5f5);
+            color: var(--tg-theme-text-color, #222);
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            background-color: var(--tg-theme-secondary-bg-color, #fff);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: var(--tg-theme-button-color, #2481cc);
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            background-color: var(--tg-theme-bg-color, #f5f5f5);
+            color: var(--tg-theme-text-color, #222);
+        }
+        
+        textarea {
+            resize: vertical;
+        }
+        
+        button {
+            background-color: var(--tg-theme-button-color, #2481cc);
+            color: var(--tg-theme-button-text-color, #fff);
+            border: none;
+            border-radius: 5px;
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+            transition: opacity 0.2s;
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        button:active {
+            opacity: 0.8;
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+            
+            input, textarea, button {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Форма заявки</h1>
+        <form id="application-form">
+            <div class="form-group">
+                <label for="name">Имя:</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="phone">Телефон:</label>
+                <input type="tel" id="phone" name="phone" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="message">Сообщение:</label>
+                <textarea id="message" name="message" rows="4"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <button type="submit" id="submit-button">Отправить</button>
+            </div>
+        </form>
+    </div>
     
-    for (const [key, value] of formData.entries()) {
-        data[key] = value;
-    }
-    
-    return data;
-}
-
-// Handle form submission
-form.addEventListener('submit', function(event) {
-    event.preventDefault();
-    
-    // Collect form data
-    const data = collectFormData();
-    
-    // Validate form data
-    if (!validateForm(data)) {
-        return;
-    }
-    
-    // Send data back to the Telegram bot
-    tgApp.sendData(JSON.stringify(data));
-    
-    // Close the WebApp after sending data
-    tgApp.close();
-});
-
-// Form validation function
-function validateForm(data) {
-    // Check if name is provided
-    if (!data.name || data.name.trim() === '') {
-        alert('Пожалуйста, введите ваше имя');
-        return false;
-    }
-    
-    // Check if email is valid
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!data.email || !emailRegex.test(data.email)) {
-        alert('Пожалуйста, введите корректный email');
-        return false;
-    }
-    
-    // Check if phone is provided
-    if (!data.phone || data.phone.trim() === '') {
-        alert('Пожалуйста, введите номер телефона');
-        return false;
-    }
-    
-    return true;
-}
-
-// Show the main button when form is valid
-form.addEventListener('input', function() {
-    const data = collectFormData();
-    if (validateForm(data)) {
-        tgApp.MainButton.show();
-    } else {
-        tgApp.MainButton.hide();
-    }
-});
-
-// Handle main button click
-tgApp.MainButton.onClick(function() {
-    submitButton.click();
-});
+    <script>
+        // Initialize Telegram WebApp
+        const tgApp = window.Telegram.WebApp;
+        
+        // Expand the WebApp to full height
+        tgApp.expand();
+        
+        // Get the form element
+        const form = document.getElementById('application-form');
+        
+        // Handle form submission
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            // Collect form data
+            const formData = new FormData(form);
+            const data = {};
+            
+            for (const [key, value] of formData.entries()) {
+                data[key] = value;
+            }
+            
+            // Send data back to the Telegram bot
+            tgApp.sendData(JSON.stringify(data));
+            
+            // Close the WebApp after sending data
+            tgApp.close();
+        });
+    </script>
+</body>
+</html>
