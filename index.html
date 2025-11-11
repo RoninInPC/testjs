@@ -28,6 +28,7 @@
       }
 
       // Отправляем данные обратно в бот
+      console.log(JSON.stringify({ date: selectedDate }));
       Telegram.WebApp.sendData(JSON.stringify({ date: selectedDate }));
 
     });
