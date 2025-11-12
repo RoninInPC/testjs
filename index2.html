@@ -26,14 +26,27 @@
       margin-top: 16px;
       font-weight: 600;
     }
-    input {
+    .datetime-group {
+      display: flex;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .datetime-group input {
+      flex: 1;
+      padding: 12px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    input[type="text"] {
       width: 100%;
       padding: 12px;
       margin-top: 6px;
       border: 1px solid #ccc;
       border-radius: 8px;
+      font-size: 16px;
       box-sizing: border-box;
-      font-size: 16px; /* предотвращает увеличение на iOS */
     }
     button {
       width: 100%;
@@ -57,50 +70,62 @@
   <div class="container">
     <h2>Введите данные</h2>
     <form id="miniAppForm">
-      <label for="name">Имя</label>
-      <input type="text" id="name" name="name" required placeholder="Ваше имя" autocomplete="off" />
+      <label for="title">Название</label>
+      <input type="text" id="title" name="title" required placeholder="Название события" autocomplete="off" />
 
-      <label for="datetime1">Дата и время начала</label>
-      <input type="datetime-local" id="datetime1" name="datetime1" required />
+      <!-- Первая дата и время -->
+      <label>Дата и время начала</label>
+      <div class="datetime-group">
+        <input type="date" id="date1" required />
+        <input type="time" id="time1" step="1" required />
+      </div>
 
-      <label for="datetime2">Дата и время окончания</label>
-      <input type="datetime-local" id="datetime2" name="datetime2" required />
+      <!-- Вторая дата и время -->
+      <label>Дата и время окончания</label>
+      <div class="datetime-group">
+        <input type="date" id="date2" required />
+        <input type="time" id="time2" step="1" required />
+      </div>
 
-      <button type="submit" id="submitButton">Отправить в бота</button>
+      <button type="submit">Отправить в бота</button>
     </form>
   </div>
 
   <script>
-    Telegram.WebApp.ready(); // Сообщаем Telegram, что приложение загружено
-
-    // Опционально: настройка цвета кнопки под тему Telegram
+    Telegram.WebApp.ready();
     Telegram.WebApp.setHeaderColor('#ffffff');
     Telegram.WebApp.setBackgroundColor('#f5f5f5');
 
     document.getElementById('miniAppForm').addEventListener('submit', function (e) {
       e.preventDefault();
 
-      const name = document.getElementById('name').value.trim();
-      const dt1 = document.getElementById('datetime1').value;
-      const dt2 = document.getElementById('datetime2').value;
+      const title = document.getElementById('title').value.trim();
+      const date1 = document.getElementById('date1').value;
+      const time1 = document.getElementById('time1').value;
+      const date2 = document.getElementById('date2').value;
+      const time2 = document.getElementById('time2').value;
 
-      // Валидация (можно расширить)
-      if (!name || !dt1 || !dt2) {
+      if (!title || !date1 || !time1 || !date2 || !time2) {
         Telegram.WebApp.showAlert('Пожалуйста, заполните все поля.');
         return;
       }
 
-      // Формируем данные в виде JSON-строки
+      // Формируем полные ISO-подобные строки с секундами
+      const start = `${date1}T${time1}`;
+      const end = `${date2}T${time2}`;
+
+      // Проверим, что секунды есть (если введены только часы и минуты — добавим :00)
+      const padSeconds = (t) => t.length === 5 ? t + ':00' : t;
+      const startFull = `${date1}T${padSeconds(time1)}`;
+      const endFull = `${date2}T${padSeconds(time2)}`;
+
       const payload = JSON.stringify({
-        name: name,
-        start: dt1,
-        end: dt2
+        title: title,
+        start: startFull,
+        end: endFull
       });
 
-      // Отправляем данные обратно в бота
       Telegram.WebApp.sendData(payload);
-
-      // Опционально: закрываем Mini App после отправки
       Telegram.WebApp.close();
     });
   </script>
