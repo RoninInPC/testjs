@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Объекты</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style id="theme-styles"></style>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            padding: 12px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            font-size: 22px;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+
+        .item {
+            background: var(--tg-theme-secondary-bg-color);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .item-image {
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: var(--tg-theme-bg-color);
+            margin-bottom: 12px;
+            align-self: center;
+        }
+
+        .item-name-input {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: none;
+            background: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            font-size: 16px;
+        }
+
+        .item-file-input {
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .item-file-input::file-selector-button {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .delete-btn {
+            margin-top: 10px;
+            padding: 8px;
+            border-radius: 8px;
+            border: none;
+            background: var(--tg-theme-destructive-text-color, #ff5c5c);
+            color: white;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            margin-top: auto;
+            margin-bottom: env(safe-area-inset-bottom);
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .btn-primary {
+            background: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+        }
+
+        .btn-outline {
+            background: transparent;
+            color: var(--tg-theme-link-color);
+            border: 1px solid var(--tg-theme-link-color);
+        }
+
+        .placeholder-img {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 80px;
+            height: 80px;
+            border-radius: 8px;
+            background: var(--tg-theme-hint-color);
+            color: var(--tg-theme-bg-color);
+            font-size: 12px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<div class="header">Объекты</div>
+<div id="items-container"></div>
+
+<div class="actions">
+    <button class="btn btn-outline" onclick="addItem()">➕ Добавить</button>
+    <button class="btn btn-primary" onclick="saveChanges()">💾 Сохранить</button>
+</div>
+
+<script>
+    let items = [];
+
+    // Применяем тему Telegram
+    function applyTelegramTheme() {
+        const theme = Telegram.WebApp.themeParams;
+        const style = document.getElementById('theme-styles');
+        let css = ':root {';
+        for (const [key, value] of Object.entries(theme)) {
+            css += `--${key}: ${typeof value === 'string' && !value.startsWith('#') ? `"${value}"` : value};`;
+        }
+        // fallback для безопасных цветов
+        css += '--tg-theme-bg-color: #ffffff;';
+        css += '--tg-theme-text-color: #000000;';
+        css += '--tg-theme-secondary-bg-color: #f0f0f0;';
+        css += '--tg-theme-button-color: #3390ec;';
+        css += '--tg-theme-button-text-color: #ffffff;';
+        css += '--tg-theme-link-color: #3390ec;';
+        css += '--tg-theme-hint-color: #999999;';
+        css += '--tg-theme-destructive-text-color: #ff5c5c;';
+        css += '}';
+        style.innerText = css;
+    }
+
+    async function fetchItems() {
+        try {
+            const resp = await fetch('https://your-api.example.com/items');
+            items = await resp.json();
+            renderItems();
+        } catch (e) {
+            alert('Не удалось загрузить данные');
+        }
+    }
+
+    function renderItems() {
+        const container = document.getElementById('items-container');
+        container.innerHTML = '';
+
+        items.forEach(item => {
+            const el = document.createElement('div');
+            el.className = 'item';
+
+            let imgEl;
+            if (item.photo) {
+                imgEl = document.createElement('img');
+                imgEl.className = 'item-image';
+                imgEl.src = `data:image/jpeg;base64,${item.photo}`;
+                imgEl.onerror = () => {
+                    imgEl.replaceWith(createPlaceholder());
+                };
+            } else {
+                imgEl = createPlaceholder();
+            }
+
+            const nameInput = document.createElement('input');
+            nameInput.className = 'item-name-input';
+            nameInput.type = 'text';
+            nameInput.value = item.name || '';
+            nameInput.placeholder = 'Имя объекта';
+            nameInput.oninput = () => { item.name = nameInput.value; };
+
+            const fileInput = document.createElement('input');
+            fileInput.className = 'item-file-input';
+            fileInput.type = 'file';
+            fileInput.accept = 'image/*';
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        item.photo = reader.result.split(',')[1]; // убираем data:image/...
+                        renderItems(); // перерисовываем для обновления фото
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.textContent = 'Удалить';
+            deleteBtn.onclick = () => {
+                items = items.filter(i => i.id !== item.id);
+                renderItems();
+            };
+
+            el.append(imgEl, nameInput, fileInput, deleteBtn);
+            container.appendChild(el);
+        });
+    }
+
+    function createPlaceholder() {
+        const div = document.createElement('div');
+        div.className = 'placeholder-img';
+        div.textContent = 'Нет фото';
+        return div;
+    }
+
+    function addItem() {
+        items.push({
+            id: 'temp_' + Date.now(),
+            name: '',
+            photo: ''
+        });
+        renderItems();
+    }
+
+    function saveChanges() {
+        const payload = {
+            items: items.map(i => ({
+                id: i.id,
+                name: i.name.trim(),
+                photo: i.photo || null
+            }))
+        };
+
+        Telegram.WebApp.sendData(JSON.stringify(payload));
+        Telegram.WebApp.close();
+    }
+
+    // Инициализация
+    Telegram.WebApp.ready();
+    Telegram.WebApp.expand();
+    applyTelegramTheme();
+    fetchItems();
+</script>
+</body>
+</html>
