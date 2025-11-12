@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Ввод данных</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 16px;
+      background: #f5f5f5;
+      color: #000;
+      margin: 0;
+    }
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+    }
+    h2 {
+      text-align: center;
+      margin-bottom: 24px;
+    }
+    label {
+      display: block;
+      margin-top: 16px;
+      font-weight: 600;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-top: 6px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+      font-size: 16px; /* предотвращает увеличение на iOS */
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 24px;
+      background: #3390ec;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Введите данные</h2>
+    <form id="miniAppForm">
+      <label for="name">Имя</label>
+      <input type="text" id="name" name="name" required placeholder="Ваше имя" autocomplete="off" />
+
+      <label for="datetime1">Дата и время начала</label>
+      <input type="datetime-local" id="datetime1" name="datetime1" required />
+
+      <label for="datetime2">Дата и время окончания</label>
+      <input type="datetime-local" id="datetime2" name="datetime2" required />
+
+      <button type="submit" id="submitButton">Отправить в бота</button>
+    </form>
+  </div>
+
+  <script>
+    Telegram.WebApp.ready(); // Сообщаем Telegram, что приложение загружено
+
+    // Опционально: настройка цвета кнопки под тему Telegram
+    Telegram.WebApp.setHeaderColor('#ffffff');
+    Telegram.WebApp.setBackgroundColor('#f5f5f5');
+
+    document.getElementById('miniAppForm').addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const name = document.getElementById('name').value.trim();
+      const dt1 = document.getElementById('datetime1').value;
+      const dt2 = document.getElementById('datetime2').value;
+
+      // Валидация (можно расширить)
+      if (!name || !dt1 || !dt2) {
+        Telegram.WebApp.showAlert('Пожалуйста, заполните все поля.');
+        return;
+      }
+
+      // Формируем данные в виде JSON-строки
+      const payload = JSON.stringify({
+        name: name,
+        start: dt1,
+        end: dt2
+      });
+
+      // Отправляем данные обратно в бота
+      Telegram.WebApp.sendData(payload);
+
+      // Опционально: закрываем Mini App после отправки
+      Telegram.WebApp.close();
+    });
+  </script>
+</body>
+</html>
