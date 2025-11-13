@@ -1,37 +1,85 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Выбор даты</title>
-  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Photo Upload Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        input, button {
+            display: block;
+            width: 100%;
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+        }
+        img#preview {
+            max-width: 100%;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
 </head>
-<body style="font-family: Arial, sans-serif; padding: 20px; text-align: center;">
-  <h2>Выберите дату</h2>
-  <input type="date" id="datePicker" style="font-size: 18px; padding: 8px; margin: 20px 0;" />
-  <br>
-  <button id="sendBtn" style="font-size: 18px; padding: 10px 20px;">Отправить дату</button>
+<body>
+<h2>Загрузи фото</h2>
+<input type="file" id="photoInput" accept="image/*" />
+<input type="text" id="photoName" placeholder="Имя фото" />
+<img id="preview" />
+<button id="sendBtn" disabled>Отправить</button>
 
-  <script>
-    const datePicker = document.getElementById('datePicker');
+<script>
+    const photoInput = document.getElementById('photoInput');
+    const photoNameInput = document.getElementById('photoName');
+    const preview = document.getElementById('preview');
     const sendBtn = document.getElementById('sendBtn');
 
-    // Устанавливаем сегодняшнюю дату по умолчанию
-    const today = new Date().toISOString().split('T')[0];
-    datePicker.value = today;
+    let photoFile = null;
 
-    sendBtn.addEventListener('click', () => {
-      const selectedDate = datePicker.value;
-      if (!selectedDate) {
-        alert('Пожалуйста, выберите дату');
-        return;
-      }
-
-      // Отправляем данные обратно в бот
-      console.log(JSON.stringify({ date: selectedDate }));
-      Telegram.WebApp.sendData(JSON.stringify({ date: selectedDate }));
-
+    photoInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            photoFile = file;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                preview.src = event.target.result;
+                preview.style.display = 'block';
+                checkReady();
+            };
+            reader.readAsDataURL(file);
+        }
     });
-  </script>
+
+    photoNameInput.addEventListener('input', checkReady);
+
+    function checkReady() {
+        sendBtn.disabled = !(photoFile && photoNameInput.value.trim());
+    }
+
+    sendBtn.addEventListener('click', async () => {
+        // Считываем фото как base64 (без data:image/... префикса)
+        const reader = new FileReader();
+        reader.onload = () => {
+            const fullBase64 = reader.result; // вида "data:image/png;base64,iVBOR..."
+            const base64Data = fullBase64.split(',')[1]; // только данные
+
+            const payload = {
+                photo_name: photoNameInput.value.trim(),
+                photo_base64: base64Data,
+                mime_type: photoFile.type
+            };
+
+            // Отправляем в бот через WebApp
+            Telegram.WebApp.sendData(JSON.stringify(payload));
+            Telegram.WebApp.close();
+        };
+        reader.readAsDataURL(photoFile);
+    });
+</script>
 </body>
 </html>
