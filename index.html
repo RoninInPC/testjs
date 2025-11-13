@@ -1,84 +1,97 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Photo Upload Mini App</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
-            font-family: sans-serif;
-            padding: 20px;
-            max-width: 500px;
-            margin: 0 auto;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 16px;
+            margin: 0;
         }
         input, button {
-            display: block;
             width: 100%;
-            margin: 10px 0;
-            padding: 10px;
+            padding: 12px;
+            margin: 8px 0;
             font-size: 16px;
+            border: 1px solid var(--tg-theme-hint-color, #ccc);
+            border-radius: 8px;
+            background: var(--tg-theme-secondary-bg-color, #f5f5f5);
+            color: var(--tg-theme-text-color, #000);
+            box-sizing: border-box;
         }
-        img#preview {
-            max-width: 100%;
+        #status {
             margin-top: 10px;
-            display: none;
+            font-size: 14px;
+            color: var(--tg-theme-hint-color, #888);
         }
     </style>
 </head>
 <body>
-<h2>Загрузи фото</h2>
-<input type="file" id="photoInput" accept="image/*" />
-<input type="text" id="photoName" placeholder="Имя фото" />
-<img id="preview" />
-<button id="sendBtn" disabled>Отправить</button>
+<h3>Загрузите фото</h3>
+<input type="file" id="photo" accept="image/*">
+<input type="text" id="name" placeholder="Имя фотографии">
+<button id="sendBtn">Отправить</button>
+<div id="status"></div>
 
 <script>
-    const photoInput = document.getElementById('photoInput');
-    const photoNameInput = document.getElementById('photoName');
-    const preview = document.getElementById('preview');
+    const photoInput = document.getElementById('photo');
+    const nameInput = document.getElementById('name');
     const sendBtn = document.getElementById('sendBtn');
+    const status = document.getElementById('status');
 
-    let photoFile = null;
+    // 🔁 Замените на ваш HTTPS-адрес!
+    const BACKEND_URL = 'https://37.113.134.130:8080/upload';
 
-    photoInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            photoFile = file;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                preview.src = event.target.result;
-                preview.style.display = 'block';
-                checkReady();
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-
-    photoNameInput.addEventListener('input', checkReady);
-
-    function checkReady() {
-        sendBtn.disabled = !(photoFile && photoNameInput.value.trim());
-    }
+    Telegram.WebApp.ready();
+    Telegram.WebApp.expand();
 
     sendBtn.addEventListener('click', async () => {
-        // Считываем фото как base64 (без data:image/... префикса)
-        const reader = new FileReader();
-        reader.onload = () => {
-            const fullBase64 = reader.result; // вида "data:image/png;base64,iVBOR..."
-            const base64Data = fullBase64.split(',')[1]; // только данные
+        const file = photoInput.files[0];
+        const name = nameInput.value.trim();
 
-            const payload = {
-                photo_name: photoNameInput.value.trim(),
-                photo_base64: base64Data,
-                mime_type: photoFile.type
-            };
+        if (!file) {
+            status.textContent = 'Выберите фото';
+            return;
+        }
+        if (!name) {
+            status.textContent = 'Введите имя';
+            return;
+        }
 
-            // Отправляем в бот через WebApp
-            Telegram.WebApp.sendData(JSON.stringify(payload));
+        const formData = new FormData();
+        formData.append('photo', file);
+        formData.append('name', name);
+
+        status.textContent = 'Отправка...';
+
+        try {
+            const res = await fetch(BACKEND_URL, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!res.ok) {
+                throw new Error(`HTTP ${res.status}`);
+            }
+
+            const result = await res.json();
+            console.log('Upload success:', result);
+
+            // ✅ Отправляем только лёгкие данные в бота
+            Telegram.WebApp.sendData(JSON.stringify({
+                photo_name: name,
+                photo_id: result.photo_id
+            }));
+
             Telegram.WebApp.close();
-        };
-        reader.readAsDataURL(photoFile);
+        } catch (err) {
+            console.error('Upload error:', err);
+            status.textContent = 'Ошибка: ' + err.message;
+        }
     });
 </script>
 </body>
