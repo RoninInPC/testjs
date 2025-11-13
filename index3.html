@@ -254,9 +254,8 @@
                 photo: i.photo || null
             }))
         };
-
+        alert(JSON.stringify(payload));
         Telegram.WebApp.sendData(JSON.stringify(payload));
-        Telegram.WebApp.close();
     }
 
     // Инициализация
